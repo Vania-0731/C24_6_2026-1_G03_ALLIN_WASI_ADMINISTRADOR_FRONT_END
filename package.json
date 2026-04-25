@@ -1,5 +1,5 @@
 {
-  "name": "temp_frontend",
+  "name": "allin-wasi-admin-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,30 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.5",
+    "axios": "^1.15.2",
+    "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
+    "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.38.0",
+    "input-otp": "^1.4.2",
+    "lucide-react": "^1.11.0",
     "next": "16.2.4",
+    "next-auth": "^4.24.14",
+    "next-themes": "^0.4.6",
+    "pannellum": "^2.5.7",
+    "radix-ui": "^1.4.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-day-picker": "^9.14.0",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.73.1",
+    "react-resizable-panels": "^4.10.0",
+    "recharts": "^3.8.1",
+    "socket.io-client": "^4.8.3",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.5.0",
+    "vaul": "^1.1.2",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
