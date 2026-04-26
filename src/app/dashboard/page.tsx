@@ -11,6 +11,7 @@ import { propertyService } from "@/services/properties.service"
 import { userService } from "@/services/users.service"
 import { toursService } from "@/services/tours.service"
 import { toast } from "sonner"
+import Link from "next/link"
 
 export default function DashboardPage() {
   const [user, setUser] = React.useState<any>(null)
@@ -67,12 +68,11 @@ export default function DashboardPage() {
             <p className="text-slate-400 font-bold mt-3 uppercase text-[10px] tracking-[0.3em]">Resumen de Gestión Territorial - Santa Anita</p>
          </div>
          <div className="flex gap-3 relative z-10">
-            <Button variant="outline" className="rounded-2xl font-black text-xs border-slate-100 h-12 px-6 shadow-sm hover:bg-slate-50 transition-all">
-               Descargar Reporte
-            </Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl h-12 px-6 shadow-lg shadow-emerald-100 transition-all active:scale-95">
-               Gestionar Mapa
-            </Button>
+            <Link href="/dashboard/map">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl h-12 px-8 shadow-lg shadow-emerald-100 transition-all active:scale-95">
+                 Gestionar Mapa
+              </Button>
+            </Link>
          </div>
       </div>
 
@@ -134,20 +134,22 @@ export default function DashboardPage() {
               </div>
            </Card>
 
-           <Card className="border-none shadow-sm rounded-[2.5rem] bg-emerald-600 text-white p-8 group cursor-pointer relative overflow-hidden">
-              <div className="absolute right-0 top-0 h-full w-24 bg-white/10 -skew-x-12 translate-x-12 transition-transform group-hover:translate-x-4" />
-              <div className="relative z-10">
-                 <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center mb-4">
-                    <MapPin className="h-5 w-5 text-white" />
+           <Link href="/dashboard/map" className="block">
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-emerald-600 text-white p-8 group cursor-pointer relative overflow-hidden">
+                 <div className="absolute right-0 top-0 h-full w-24 bg-white/10 -skew-x-12 translate-x-12 transition-transform group-hover:translate-x-4" />
+                 <div className="relative z-10">
+                    <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center mb-4">
+                       <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <h4 className="text-lg font-black tracking-tight leading-tight">Mapa en Vivo</h4>
+                    <p className="text-xs font-bold text-emerald-100/80 mt-1">Ver todos los puntos de interés</p>
+                    <div className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                       <span>Explorar ahora</span>
+                       <ArrowUpRight className="h-3 w-3" />
+                    </div>
                  </div>
-                 <h4 className="text-lg font-black tracking-tight leading-tight">Mapa en Vivo</h4>
-                 <p className="text-xs font-bold text-emerald-100/80 mt-1">Ver todos los puntos de interés</p>
-                 <div className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                    <span>Explorar ahora</span>
-                    <ArrowUpRight className="h-3 w-3" />
-                 </div>
-              </div>
-           </Card>
+              </Card>
+           </Link>
         </div>
       </div>
     </div>
