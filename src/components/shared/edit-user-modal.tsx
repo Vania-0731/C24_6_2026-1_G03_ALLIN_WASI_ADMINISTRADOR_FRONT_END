@@ -75,6 +75,7 @@ export function EditUserModal({ isOpen, onClose, onSuccess, user }: EditUserModa
           <div className="flex items-center gap-2">
             <UserIcon className="h-5 w-5 text-emerald-100" />
             <DialogTitle className="text-base font-black text-white tracking-tight">Editar Perfil</DialogTitle>
+            <DialogDescription className="sr-only">Actualiza los datos personales del usuario.</DialogDescription>
           </div>
           <div className="flex items-center gap-2">
             <Button 

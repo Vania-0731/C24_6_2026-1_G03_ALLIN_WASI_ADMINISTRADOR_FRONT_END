@@ -81,6 +81,7 @@ export function ManagePermissionsModal({ isOpen, onClose, user }: ManagePermissi
             </div>
             <div>
               <DialogTitle className="text-lg font-black text-white tracking-tight leading-none">Permisos Admin</DialogTitle>
+              <DialogDescription className="sr-only">Configura los permisos de acceso a los módulos para este administrador.</DialogDescription>
               <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest mt-1">Control de Acceso</p>
             </div>
           </div>
