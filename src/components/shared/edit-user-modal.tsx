@@ -71,7 +71,7 @@ export function EditUserModal({ isOpen, onClose, onSuccess, user }: EditUserModa
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[420px] rounded-2xl border-none p-0 overflow-hidden bg-white shadow-2xl">
         {/* Header Compacto Esmeralda */}
-        <div className="bg-emerald-600 px-5 py-4 flex items-center justify-between border-b-0">
+        <div className="bg-emerald-600 pl-5 pr-12 py-4 flex items-center justify-between border-b-0">
           <div className="flex items-center gap-2">
             <UserIcon className="h-5 w-5 text-emerald-100" />
             <DialogTitle className="text-base font-black text-white tracking-tight">Editar Perfil</DialogTitle>
@@ -84,9 +84,6 @@ export function EditUserModal({ isOpen, onClose, onSuccess, user }: EditUserModa
               className="h-8 bg-white/20 hover:bg-white/30 text-white font-black text-[10px] px-4 rounded-xl border border-white/20 transition-all active:scale-95 uppercase tracking-widest"
             >
               {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Save className="mr-2 h-3 w-3" /> Guardar</>}
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
-              <X className="h-5 w-5" />
             </Button>
           </div>
         </div>

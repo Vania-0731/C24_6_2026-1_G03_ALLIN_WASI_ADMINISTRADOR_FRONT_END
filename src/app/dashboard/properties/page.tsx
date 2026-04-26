@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { propertyService } from "@/services/properties.service"
 import { toast } from "sonner"
+import { PropertyDetailModal } from "@/components/shared/property-detail-modal"
 
 export default function PropertiesPage() {
   const [properties, setProperties] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(true)
   const [filter, setFilter] = React.useState("todos")
   const [search, setSearch] = React.useState("")
+  const [selectedProperty, setSelectedProperty] = React.useState<any>(null)
 
   React.useEffect(() => {
     fetchProperties()
@@ -27,6 +29,28 @@ export default function PropertiesPage() {
       toast.error(error.toString())
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApprove = async (id: string) => {
+    try {
+      await propertyService.updateStatus(id, 'available')
+      toast.success("Propiedad aprobada correctamente")
+      setSelectedProperty(null)
+      fetchProperties()
+    } catch (error: any) {
+      toast.error("Error al aprobar la propiedad")
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    try {
+      await propertyService.updateStatus(id, 'draft') // O un estado 'rejected' si lo tenemos
+      toast.success("Propiedad rechazada")
+      setSelectedProperty(null)
+      fetchProperties()
+    } catch (error: any) {
+      toast.error("Error al rechazar la propiedad")
     }
   }
 
@@ -74,6 +98,7 @@ export default function PropertiesPage() {
             <FilterTab label="Borradores" active={filter === "draft"} onClick={() => setFilter("draft")} />
             <FilterTab label="Disponibles" active={filter === "available"} onClick={() => setFilter("available")} />
             <FilterTab label="Alquilados" active={filter === "rented"} onClick={() => setFilter("rented")} />
+            <FilterTab label="Reservados" active={filter === "reserved"} onClick={() => setFilter("reserved")} />
           </div>
         </div>
 
@@ -129,7 +154,15 @@ export default function PropertiesPage() {
                         <StatusBadge status={prop.status} />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setSelectedProperty(prop)}
+                            className="h-8 w-8 rounded-lg hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                            {prop.status === 'draft' && (
                              <Button 
                               onClick={() => handleStatusUpdate(prop.id, 'available')}
@@ -138,9 +171,6 @@ export default function PropertiesPage() {
                                <CheckCircle2 className="h-4 w-4" />
                              </Button>
                            )}
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-inkwell">
-                             <Eye className="h-4 w-4" />
-                           </Button>
                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-500">
                              <XCircle className="h-4 w-4" />
                            </Button>
@@ -153,6 +183,14 @@ export default function PropertiesPage() {
             </table>
           </div>
         </Card>
+
+        <PropertyDetailModal 
+          isOpen={!!selectedProperty}
+          onClose={() => setSelectedProperty(null)}
+          property={selectedProperty}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
       </div>
     </div>
   )

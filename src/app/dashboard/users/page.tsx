@@ -189,57 +189,63 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Icono Editar */}
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Botón Editar */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => setEditingUser(user)}
-                                className="h-9 w-9 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all active:scale-90"
+                                className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100 active:scale-90"
                               >
-                                <Edit2 className="h-4 w-4" />
+                                <Edit2 className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent className="bg-slate-800 text-white border-none font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-xl">
+                            <TooltipContent className="bg-slate-800 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg border-none">
                               Editar Perfil
                             </TooltipContent>
                           </Tooltip>
 
-                          {/* Icono Permisos (Solo si es admin) */}
-                          {user.role?.name === 'admin' && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={() => setPermissionsUser(user)}
-                                  className="h-9 w-9 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 text-slate-400 transition-all active:scale-90"
-                                >
-                                  <ShieldCheck className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-slate-800 text-white border-none font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-xl">
-                                Gestionar Permisos
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-
-                          {/* Icono Eliminar */}
+                          {/* Botón Eliminar */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => setUserToDelete(user.id)}
-                                className="h-9 w-9 rounded-xl hover:bg-red-50 hover:text-red-600 text-slate-400 transition-all active:scale-90"
+                                className="h-8 w-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-100 active:scale-90"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent className="bg-slate-800 text-white border-none font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-xl">
+                            <TooltipContent className="bg-slate-800 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg border-none">
                               Eliminar Cuenta
+                            </TooltipContent>
+                          </Tooltip>
+
+                          {/* Botón Permisos */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-block">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  disabled={user.role?.name !== 'admin'}
+                                  onClick={() => setPermissionsUser(user)}
+                                  className={cn(
+                                    "h-8 w-8 rounded-lg transition-all shadow-sm border active:scale-90",
+                                    user.role?.name === 'admin' 
+                                      ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-600 hover:text-white" 
+                                      : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed opacity-50"
+                                  )}
+                                >
+                                  <ShieldCheck className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-slate-800 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg border-none">
+                              {user.role?.name === 'admin' ? "Gestionar Permisos" : "Solo para Administradores"}
                             </TooltipContent>
                           </Tooltip>
                         </div>

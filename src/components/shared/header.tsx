@@ -24,13 +24,6 @@ export function Header() {
             3
           </span>
         </Button>
-        <div className="h-8 w-px bg-slate-200 mx-2" />
-        <Button variant="ghost" className="gap-2 px-2 hover:bg-slate-50">
-          <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Avatar" />
-          </div>
-          <ChevronDown className="h-4 w-4 text-slate-400" />
-        </Button>
       </div>
     </header>
   )
