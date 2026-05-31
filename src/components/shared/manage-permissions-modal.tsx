@@ -20,6 +20,8 @@ const PERMISSION_LABELS: any = {
   manageProperties: "Gestión de Propiedades",
   manageUsers: "Gestión de Usuarios",
   viewMap: "Acceso al Mapa Interactivo",
+  viewAnalytics: "Acceso a Analíticas",
+  viewSecurity: "Gestión de Seguridad",
 }
 
 export function ManagePermissionsModal({ isOpen, onClose, user }: ManagePermissionsModalProps) {
@@ -28,6 +30,8 @@ export function ManagePermissionsModal({ isOpen, onClose, user }: ManagePermissi
     manageProperties: false,
     manageUsers: false,
     viewMap: false,
+    viewAnalytics: false,
+    viewSecurity: false,
   })
   const [loading, setLoading] = React.useState(false)
 
@@ -39,6 +43,8 @@ export function ManagePermissionsModal({ isOpen, onClose, user }: ManagePermissi
           manageProperties: user.permissions.manageProperties ?? false,
           manageUsers: user.permissions.manageUsers ?? false,
           viewMap: user.permissions.viewMap ?? false,
+          viewAnalytics: user.permissions.viewAnalytics ?? false,
+          viewSecurity: user.permissions.viewSecurity ?? false,
         })
       } else {
         setPermissions({
@@ -46,6 +52,8 @@ export function ManagePermissionsModal({ isOpen, onClose, user }: ManagePermissi
           manageProperties: false,
           manageUsers: false,
           viewMap: false,
+          viewAnalytics: false,
+          viewSecurity: false,
         })
       }
     }

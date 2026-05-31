@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Map, Users, Home, LogOut, Camera, Menu} from "lucide-react"
+import { LayoutDashboard, Map, Users, Home, LogOut, Camera, Menu, BarChart, ShieldAlert, Settings, ClipboardCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { authService } from "@/services/auth.service"
@@ -14,6 +14,10 @@ const menuItems = [
   { icon: Home, label: "Propiedades", href: "/dashboard/properties", badge: "156", permission: "manageProperties" },
   { icon: Users, label: "Usuarios", href: "/dashboard/users", badge: "1.2k", permission: "manageUsers" },
   { icon: Map, label: "Mapa Interactivo", href: "/dashboard/map", permission: "viewMap" },
+  { icon: BarChart, label: "Analíticas", href: "/dashboard/analytics", permission: "viewAnalytics" },
+  { icon: ShieldAlert, label: "Seguridad", href: "/dashboard/security", permission: "viewSecurity" },
+  { icon: ClipboardCheck, label: "Solicitudes", href: "/dashboard/verification-requests", permission: "manageUsers" },
+  { icon: Settings, label: "Configuración", href: "/dashboard/settings", permission: "manageSettings" },
 ]
 
 export function Sidebar() {
