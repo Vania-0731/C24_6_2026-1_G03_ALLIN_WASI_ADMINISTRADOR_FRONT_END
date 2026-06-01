@@ -31,6 +31,7 @@ export default function SecurityPage() {
   const [search, setSearch] = React.useState("")
   const [severityFilter, setSeverityFilter] = React.useState("all")
   const [statusFilter, setStatusFilter] = React.useState("all")
+  const [typeFilter, setTypeFilter] = React.useState("all")
   const [activeTab, setActiveTab] = React.useState("Reportes de Seguridad")
   
   // Modal state
@@ -43,6 +44,10 @@ export default function SecurityPage() {
     severity: "medium"
   })
 
+  // Details Modal state
+  const [reportDetailsOpen, setReportDetailsOpen] = React.useState(false)
+  const [selectedReport, setSelectedReport] = React.useState<any>(null)
+
   React.useEffect(() => {
     fetchReports()
   }, [])
@@ -51,7 +56,45 @@ export default function SecurityPage() {
     setLoading(true)
     try {
       const data = await securityService.getAllReports()
-      setReports(data || [])
+      const mapped = (data || []).map((r: any) => {
+        let parsed = null;
+        try {
+          parsed = JSON.parse(r.reason);
+        } catch(e) {}
+
+        const statusLower = r.status?.toLowerCase() || 'pending';
+
+        if (parsed && parsed.isAdminAlert) {
+          return {
+            ...r,
+            title: parsed.title,
+            description: parsed.description,
+            location: parsed.location,
+            severity: parsed.severity,
+            status: statusLower,
+            isUserReport: false
+          }
+        } else {
+          let title = "Reporte de Usuario";
+          let desc = r.reason;
+          if (typeof r.reason === 'string' && r.reason.includes(':')) {
+            const parts = r.reason.split(':');
+            title = parts[0].trim();
+            desc = parts.slice(1).join(':').trim();
+          }
+
+          return {
+            ...r,
+            title: title,
+            description: desc,
+            location: "Plataforma",
+            severity: "medium",
+            status: statusLower,
+            isUserReport: true
+          }
+        }
+      });
+      setReports(mapped)
     } catch (error) {
       toast.error("Error al cargar los reportes de seguridad")
       console.error(error)
@@ -81,23 +124,25 @@ export default function SecurityPage() {
     }
   }
 
-  const handleAtender = async (id: string) => {
-    try {
-      await securityService.updateReportStatus(id, "investigating")
-      toast.success("Estado actualizado a Investigando")
-      fetchReports()
-    } catch (error) {
-      toast.error("Error al actualizar estado")
-    }
-  }
-
   const handleResolver = async (id: string) => {
     try {
-      await securityService.updateReportStatus(id, "resolved")
+      await securityService.updateReportStatus(id, "RESOLVED")
       toast.success("Alerta resuelta exitosamente")
+      setReportDetailsOpen(false)
       fetchReports()
     } catch (error) {
       toast.error("Error al resolver alerta")
+    }
+  }
+
+  const handleDesestimar = async (id: string) => {
+    try {
+      await securityService.updateReportStatus(id, "DISMISSED")
+      toast.success("Alerta desestimada")
+      setReportDetailsOpen(false)
+      fetchReports()
+    } catch (error) {
+      toast.error("Error al desestimar alerta")
     }
   }
 
@@ -109,13 +154,25 @@ export default function SecurityPage() {
                           r.location?.toLowerCase().includes(search.toLowerCase())
     const matchesSeverity = severityFilter === "all" || r.severity === severityFilter
     const matchesStatus = statusFilter === "all" || r.status === statusFilter
-    return matchesSearch && matchesSeverity && matchesStatus
+    
+    // Filtro por tipo de reporte (User report vs Admin alert) y contenido del reason
+    let matchesType = true;
+    if (typeFilter !== "all") {
+      if (typeFilter === "admin_alert") {
+        matchesType = !r.isUserReport;
+      } else {
+        // Es un filtro de motivo de usuario (ej. "engañosa")
+        matchesType = r.isUserReport && r.description?.toLowerCase().includes(typeFilter.toLowerCase());
+      }
+    }
+
+    return matchesSearch && matchesSeverity && matchesStatus && matchesType
   })
 
   const stats = {
     total: reports.length,
     pending: reports.filter(r => r.status === 'pending').length,
-    investigating: reports.filter(r => r.status === 'investigating').length,
+    investigating: reports.filter(r => r.status === 'dismissed').length,
     resolved: reports.filter(r => r.status === 'resolved').length,
   }
 
@@ -211,7 +268,7 @@ export default function SecurityPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard title="Total Reportes" value={stats.total} icon={AlertTriangle} color="text-red-500" />
         <StatCard title="Pendientes" value={stats.pending} icon={Clock} color="text-orange-500" />
-        <StatCard title="En Investigación" value={stats.investigating} icon={Eye} color="text-blue-500" />
+        <StatCard title="Desestimados" value={stats.investigating} icon={Eye} color="text-slate-500" />
         <StatCard title="Resueltos" value={stats.resolved} icon={CheckCircle2} color="text-emerald-500" />
       </div>
 
@@ -237,16 +294,27 @@ export default function SecurityPage() {
       {activeTab === "Reportes de Seguridad" && (
         <div className="animate-in slide-in-from-bottom-4 duration-500">
           <Card className="rounded-[2rem] border-slate-100 shadow-sm overflow-hidden">
-            <CardContent className="p-4 bg-slate-50/50 flex flex-col md:flex-row gap-4 border-b border-slate-100">
-              <div className="relative flex-1">
+            <CardContent className="p-4 bg-slate-50/50 flex flex-col md:flex-row gap-4 border-b border-slate-100 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input 
-                  placeholder="Buscar reportes por título, ubicación o reportero..."
+                  placeholder="Buscar reportes..."
                   className="pl-9 bg-white border-slate-200 rounded-xl"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[180px] bg-white rounded-xl">
+                  <SelectValue placeholder="Tipo de Reporte" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="admin_alert">Alertas Globales</SelectItem>
+                  <SelectItem value="engañosa">Publicación Engañosa</SelectItem>
+                  <SelectItem value="inapropiado">Comportamiento Inapropiado</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={severityFilter} onValueChange={setSeverityFilter}>
                 <SelectTrigger className="w-[180px] bg-white rounded-xl">
                   <SelectValue placeholder="Todas las severidades" />
@@ -265,7 +333,7 @@ export default function SecurityPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="pending">Pendiente</SelectItem>
-                  <SelectItem value="investigating">Investigando</SelectItem>
+                  <SelectItem value="dismissed">Desestimado</SelectItem>
                   <SelectItem value="resolved">Resuelto</SelectItem>
                 </SelectContent>
               </Select>
@@ -313,9 +381,9 @@ export default function SecurityPage() {
                               <Users className="w-3 h-3 text-slate-500" />
                             </div>
                             <div>
-                              <p className="font-bold text-inkwell text-xs">{report.reportedBy?.fullName || 'Desconocido'}</p>
+                              <p className="font-bold text-inkwell text-xs">{report.reporter?.fullName || 'Desconocido'}</p>
                               <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500">
-                                {report.reportedBy?.role?.name || 'Usuario'}
+                                {report.reporter?.role?.name || 'Usuario'}
                               </span>
                             </div>
                           </div>
@@ -339,7 +407,15 @@ export default function SecurityPage() {
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-inkwell">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-400 hover:text-inkwell"
+                            onClick={() => {
+                              setSelectedReport(report)
+                              setReportDetailsOpen(true)
+                            }}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
                         </td>
@@ -424,15 +500,23 @@ export default function SecurityPage() {
                 </div>
                 
                 <div className="flex gap-2 shrink-0 md:pl-6 md:border-l border-slate-200/50">
-                  <Button variant="outline" size="icon" className="rounded-xl border-slate-200 bg-white">
-                    <MessageSquare className="w-4 h-4 text-slate-500" />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-xl border-slate-200 bg-white"
+                    onClick={() => {
+                      setSelectedReport(alert)
+                      setReportDetailsOpen(true)
+                    }}
+                  >
+                    <Eye className="w-4 h-4 text-slate-500" />
                   </Button>
                   {alert.status === 'pending' && (
-                    <Button onClick={() => handleAtender(alert.id)} className="rounded-xl font-bold bg-inkwell text-white hover:bg-inkwell/90">
-                      Atender Alerta
+                    <Button onClick={() => handleDesestimar(alert.id)} className="rounded-xl font-bold bg-inkwell text-white hover:bg-inkwell/90">
+                      Desestimar
                     </Button>
                   )}
-                  {alert.status === 'investigating' && (
+                  {(alert.status === 'pending' || alert.status === 'dismissed') && (
                     <Button onClick={() => handleResolver(alert.id)} className="rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700">
                       Marcar como Resuelto
                     </Button>
@@ -444,6 +528,78 @@ export default function SecurityPage() {
         </div>
       )}
 
+      {/* Report Details Modal */}
+      <Dialog open={reportDetailsOpen} onOpenChange={setReportDetailsOpen}>
+        <DialogContent className="sm:max-w-[550px] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+          {selectedReport && (
+            <>
+              <div className="bg-inkwell p-6">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className={cn("w-6 h-6", selectedReport.severity === 'high' ? "text-red-500" : (selectedReport.severity === 'medium' ? "text-orange-500" : "text-emerald-500"))} />
+                  <div>
+                    <DialogTitle className="text-xl font-black text-white">{selectedReport.title}</DialogTitle>
+                    <DialogDescription className="text-slate-400 text-sm mt-1">
+                      ID: #{selectedReport.id.substring(0, 8)} • Creado el {new Date(selectedReport.createdAt).toLocaleString()}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 space-y-6 bg-white">
+                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Reportado Por</p>
+                    <p className="font-bold text-inkwell text-sm">{selectedReport.reporter?.fullName || 'Desconocido'}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{selectedReport.reporter?.email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Estado Actual</p>
+                    <StatusBadge status={selectedReport.status} />
+                  </div>
+                  {selectedReport.reportedUser && (
+                    <div className="col-span-2 pt-3 mt-1 border-t border-slate-200">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Usuario Reportado</p>
+                      <p className="font-bold text-inkwell text-sm">{selectedReport.reportedUser.fullName}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{selectedReport.reportedUser.email}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Descripción del Incidente</p>
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedReport.description || selectedReport.reason}</p>
+                  </div>
+                </div>
+
+                {selectedReport.status === 'pending' && (
+                  <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                    <Button
+                      variant="outline"
+                      className="rounded-xl border-slate-200 font-bold"
+                      onClick={() => handleDesestimar(selectedReport.id)}
+                    >
+                      Desestimar Reporte
+                    </Button>
+                    <Button
+                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                      onClick={() => handleResolver(selectedReport.id)}
+                    >
+                      Marcar como Resuelto
+                    </Button>
+                  </div>
+                )}
+                {selectedReport.status !== 'pending' && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-center text-sm font-bold text-slate-500">
+                      Este reporte ya ha sido {selectedReport.status === 'resolved' ? 'resuelto' : 'desestimado'}.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -495,7 +651,7 @@ function StatusBadge({ status }: { status: string }) {
   const getBadgeStyle = () => {
     switch (status) {
       case 'pending': return 'bg-slate-100 text-slate-600 border-slate-200'
-      case 'investigating': return 'bg-blue-600 text-white border-blue-700'
+      case 'dismissed': return 'bg-slate-50 text-slate-600 border-slate-200'
       case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200'
       default: return 'bg-slate-100 text-slate-600 border-slate-200'
     }
@@ -504,13 +660,13 @@ function StatusBadge({ status }: { status: string }) {
   const getLabel = () => {
     switch (status) {
       case 'pending': return 'Pendiente'
-      case 'investigating': return 'Investigando'
+      case 'dismissed': return 'Desestimado'
       case 'resolved': return 'Resuelto'
       default: return status
     }
   }
 
-  const Icon = status === 'resolved' ? CheckCircle2 : (status === 'investigating' ? Eye : Clock)
+  const Icon = status === 'resolved' ? CheckCircle2 : (status === 'dismissed' ? Eye : Clock)
 
   return (
     <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border flex w-fit items-center gap-1.5", getBadgeStyle())}>
