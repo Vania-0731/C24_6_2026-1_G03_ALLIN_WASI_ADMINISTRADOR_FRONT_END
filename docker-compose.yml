@@ -1,0 +1,11 @@
+services:
+  admin-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: front-administrador
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
