@@ -1,12 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Check, X, Eye, FileText, Building2, UserCircle2, ZoomIn } from "lucide-react"
+import { Check, X, Eye, FileText, Building2, UserCircle2, ZoomIn, Shield, Loader2, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { verificationRequestsService, LandlordProfile, TenantProfile } from "@/services/verification-requests.service"
+import { verificationRequestsService, LandlordProfile, TenantProfile, SunarpResponse } from "@/services/verification-requests.service"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
@@ -23,6 +23,10 @@ export default function VerificationRequestsPage() {
   const [rejectMessage, setRejectMessage] = React.useState('')
   const [processing, setProcessing] = React.useState(false)
   const [zoomedImage, setZoomedImage] = React.useState<string | null>(null)
+
+  // SUNARP state
+  const [sunarpLoading, setSunarpLoading] = React.useState(false)
+  const [sunarpResult, setSunarpResult] = React.useState<SunarpResponse | null>(null)
 
   React.useEffect(() => {
     fetchRequests()
@@ -48,7 +52,31 @@ export default function VerificationRequestsPage() {
     setIsModalOpen(true)
     setRejecting(false)
     setRejectMessage('')
+    setSunarpResult(null)
   }
+
+  const handleSunarpValidation = async () => {
+    if (!selectedProfile || !('dni' in selectedProfile)) return;
+    setSunarpLoading(true);
+    try {
+      const result = await verificationRequestsService.simulateSunarp(
+        selectedProfile.dni,
+        selectedProfile.user?.fullName || '',
+        selectedProfile.address,
+        'LIMA'
+      );
+      setSunarpResult(result);
+      if (result.success) {
+        toast.success('Validación SUNARP completada correctamente');
+      } else {
+        toast.error('SUNARP: No se encontraron registros');
+      }
+    } catch {
+      toast.error('Error al consultar SUNARP');
+    } finally {
+      setSunarpLoading(false);
+    }
+  };
 
   const handleApprove = async () => {
     if (!selectedProfile) return
@@ -412,6 +440,132 @@ export default function VerificationRequestsPage() {
                   )}
                 </div>
               </div>
+
+              {/* SUNARP Validation Panel — solo para arrendadores */}
+              {'dni' in selectedProfile && (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                        <Shield className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white">Validación SUNARP</p>
+                        <p className="text-[11px] text-white/60">Consulta simulada de Registros Públicos</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleSunarpValidation}
+                      disabled={sunarpLoading}
+                      size="sm"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 gap-2 disabled:opacity-50"
+                    >
+                      {sunarpLoading ? (
+                        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Consultando...</>
+                      ) : (
+                        <><ExternalLink className="h-3.5 w-3.5" /> Consultar SUNARP</>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Result */}
+                  <div className="p-6">
+                    {!sunarpResult && !sunarpLoading && (
+                      <div className="flex flex-col items-center justify-center py-6 text-center gap-2">
+                        <Shield className="h-10 w-10 text-slate-200" />
+                        <p className="text-sm font-medium text-slate-400">Presiona «Consultar SUNARP» para validar la titularidad del arrendador en Registros Públicos.</p>
+                      </div>
+                    )}
+
+                    {sunarpLoading && (
+                      <div className="flex flex-col items-center justify-center py-6 gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                        <p className="text-sm font-medium text-slate-500">Consultando base de datos de SUNARP...</p>
+                      </div>
+                    )}
+
+                    {sunarpResult && !sunarpLoading && (
+                      <>
+                        {/* Result Banner */}
+                        <div className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-xl mb-5 text-sm font-bold",
+                          sunarpResult.success
+                            ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
+                            : "bg-red-50 border border-red-200 text-red-800"
+                        )}>
+                          {sunarpResult.success
+                            ? <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                            : <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
+                          {sunarpResult.mensaje}
+                        </div>
+
+                        {sunarpResult.success && sunarpResult.data && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Número de partida */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">N° Partida Registral</span>
+                              <span className="text-base font-black text-slate-800 font-mono">{sunarpResult.data.numeroPartida}</span>
+                            </div>
+                            {/* Zona registral */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Zona Registral</span>
+                              <span className="text-sm font-bold text-slate-700">{sunarpResult.data.zonaRegistral}</span>
+                            </div>
+                            {/* Dirección */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 md:col-span-2">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Dirección Registrada</span>
+                              <span className="text-sm font-bold text-slate-700">{sunarpResult.data.direccionRegistrada}</span>
+                            </div>
+                            {/* Tipo de inmueble */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tipo de Inmueble</span>
+                              <span className="text-sm font-bold text-slate-700">{sunarpResult.data.tipoInmueble}</span>
+                            </div>
+                            {/* Estado */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Estado</span>
+                              <span className={cn(
+                                "inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full",
+                                sunarpResult.data.estado === 'ACTIVO' ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                              )}>
+                                <span className={cn("h-1.5 w-1.5 rounded-full", sunarpResult.data.estado === 'ACTIVO' ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
+                                {sunarpResult.data.estado}
+                              </span>
+                            </div>
+                            {/* Cargas y gravámenes */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Cargas y Gravámenes</span>
+                              <span className={cn(
+                                "inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full",
+                                sunarpResult.data.cargasYGravamenes ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                              )}>
+                                {sunarpResult.data.cargasYGravamenes ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                                {sunarpResult.data.cargasYGravamenes ? 'Tiene cargas' : 'Sin cargas'}
+                              </span>
+                            </div>
+                            {/* Propietarios */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Propietario(s) Registrado(s)</span>
+                              {sunarpResult.data.propietarios.map((p, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <div className="h-7 w-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs">
+                                    {p.nombreCompleto.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-black text-slate-800">{p.nombreCompleto}</p>
+                                    <p className="text-[10px] text-slate-400">DNI: {p.dni}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className={cn("grid gap-6", 'dni' in selectedProfile ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2")}>
                 {'dni' in selectedProfile ? (

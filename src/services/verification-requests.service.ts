@@ -46,6 +46,27 @@ export interface TenantProfile {
   };
 }
 
+export interface SunarpPropietario {
+  dni: string;
+  nombreCompleto: string;
+}
+
+export interface SunarpData {
+  numeroPartida: string;
+  zonaRegistral: string;
+  direccionRegistrada: string;
+  tipoInmueble: string;
+  propietarios: SunarpPropietario[];
+  cargasYGravamenes: boolean;
+  estado: string;
+}
+
+export interface SunarpResponse {
+  success: boolean;
+  data: SunarpData | null;
+  mensaje: string;
+}
+
 class VerificationRequestsService {
   async getLandlordRequests(): Promise<LandlordProfile[]> {
     const token = authService.getToken();
@@ -83,6 +104,50 @@ class VerificationRequestsService {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
+  }
+
+  /**
+   * Simula la consulta al servicio SUNARP.
+   * Usa el DNI y nombre real del arrendador para que los datos sean coherentes con la BD.
+   */
+  async simulateSunarp(
+    dniPropietario: string,
+    nombreCompleto: string,
+    address: string,
+    zonaRegistral: string = 'LIMA'
+  ): Promise<SunarpResponse> {
+    // Simulate network delay (800ms - 1800ms)
+    await new Promise((res) => setTimeout(res, 800 + Math.random() * 1000));
+
+    // 90% success rate — 10% failure to make it realistic
+    const success = Math.random() > 0.1;
+
+    if (!success) {
+      return {
+        success: false,
+        data: null,
+        mensaje: 'No se encontraron registros para el DNI proporcionado en SUNARP.',
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        numeroPartida: String(Math.floor(10000000 + Math.random() * 89999999)),
+        zonaRegistral: `${zonaRegistral.toUpperCase()} SEDE ${zonaRegistral.toUpperCase()}`,
+        direccionRegistrada: address || 'Av. Cascanueces 120, Santa Anita, Lima',
+        tipoInmueble: 'DEPARTAMENTO',
+        propietarios: [
+          {
+            dni: dniPropietario,
+            nombreCompleto: nombreCompleto.toUpperCase(),
+          },
+        ],
+        cargasYGravamenes: false,
+        estado: 'ACTIVO',
+      },
+      mensaje: 'Inmueble validado correctamente',
+    };
   }
 
   getProxyUrl(url?: string): string {
